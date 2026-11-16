@@ -199,19 +199,38 @@
     } catch(e) { setStatus(e.message,true); }
   });
   $("closeDialog").addEventListener("click", () => $("appDialog").close());
-  function appUri(app) {
-    const generic=state.paymentUri;
-    // App-specific URI schemes are best-effort and may vary by app/platform.
-    if (app==="gpay") return /iPhone|iPad|iPod/i.test(navigator.userAgent) ? generic.replace(/^upi:/,"gpay:") : generic.replace(/^upi:/,"tez:");
-    if (app==="phonepe") return generic.replace(/^upi:/,"phonepe:");
-    if (app==="paytm") return generic.replace(/^upi:/,"paytmmp:");
-    return generic;
+  
+function appUri(app) {
+  const generic = state.paymentUri;
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const query = generic.includes("?")
+    ? generic.substring(generic.indexOf("?") + 1)
+    : "";
+
+  if (!query) return generic;
+
+  if (app === "gpay") {
+    if (isIOS) {
+      // Google Pay deep link for iPhone
+      return `gpay://upi/pay?${query}`;
+    }
+
+    // Android Chrome: explicitly target Google Pay
+    return `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
   }
-  document.querySelectorAll("[data-app]").forEach(btn => btn.addEventListener("click", () => {
-    const app=btn.dataset.app, uri=appUri(app);
-    $("appDialog").close();
-    window.location.href=uri;
-  }));
+
+  if (app === "phonepe") {
+    return generic.replace(/^upi:/, "phonepe:");
+  }
+
+  if (app === "paytm") {
+    return generic.replace(/^upi:/, "paytmmp:");
+  }
+
+  return generic;
+}
+
 
   async function processShared() {
     const params = new URLSearchParams(location.search);
