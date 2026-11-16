@@ -200,32 +200,25 @@
   });
   $("closeDialog").addEventListener("click", () => $("appDialog").close());
   
+
+
 function appUri(app) {
   const generic = state.paymentUri;
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  const query = generic.includes("?")
-    ? generic.substring(generic.indexOf("?") + 1)
-    : "";
-
-  if (!query) return generic;
-
   if (app === "gpay") {
-    if (isIOS) {
-      // Google Pay deep link for iPhone
-      return `gpay://upi/pay?${query}`;
-    }
-
-    // Android Chrome: explicitly target Google Pay
-    return `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+    return generic.replace(
+      /^upi:\/\/pay\?/i,
+      isIOS ? "gpay://upi/pay?" : "tez://upi/pay?"
+    );
   }
 
   if (app === "phonepe") {
-    return generic.replace(/^upi:/, "phonepe:");
+    return generic.replace(/^upi:\/\/pay\?/i, "phonepe://pay?");
   }
 
   if (app === "paytm") {
-    return generic.replace(/^upi:/, "paytmmp:");
+    return generic.replace(/^upi:\/\/pay\?/i, "paytmmp://pay?");
   }
 
   return generic;
