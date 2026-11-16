@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f3ee">
+  <meta name="description" content="Kova — private, on-device UPI QR reader and settlement notebook.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Kova — QR to UPI</title>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Kova home"><span class="brand-mark">K</span><span>KOVA</span></a>
+    <div class="top-actions">
+      <span class="privacy"><i></i> On-device</span>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">☼</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="intro">
+      <p class="eyebrow">PRIVATE QR CHECKOUT</p>
+      <h1>From QR to<br><em>settled.</em></h1>
+      <p class="subhead">Read a payment QR, verify the recipient, and hand off to your UPI app. Your QR image stays on this device.</p>
+    </section>
+
+    <section class="scanner-card">
+      <div class="section-head">
+        <div><p class="eyebrow">01 / IMPORT</p><h2>Bring in a QR</h2></div>
+        <span class="local-tag">NO UPLOADS</span>
+      </div>
+      <div class="dropzone" id="dropzone">
+        <div class="qr-art" aria-hidden="true"><span></span><span></span><span></span><b>＋</b></div>
+        <h3>Choose or drop an image</h3>
+        <p>QR screenshot, photo, or shared image</p>
+        <label class="primary-btn" for="fileInput">Choose image</label>
+        <input id="fileInput" type="file" accept="image/*" hidden>
+        <p class="micro">You can also paste an image with Ctrl / ⌘ + V</p>
+      </div>
+      <div class="scan-row">
+        <button class="secondary-btn" id="cameraBtn">Use camera</button>
+        <button class="text-btn" id="pasteBtn">Paste image</button>
+      </div>
+      <video id="camera" playsinline muted hidden></video>
+      <canvas id="canvas" hidden></canvas>
+      <p class="status" id="scanStatus" role="status" aria-live="polite">Ready when you are.</p>
+    </section>
+
+    <section class="result-card" id="resultCard" hidden>
+      <div class="section-head">
+        <div><p class="eyebrow">02 / VERIFY</p><h2>Payment details</h2></div>
+        <span class="verified-tag">DECODED LOCALLY</span>
+      </div>
+      <div class="payee">
+        <div class="payee-avatar" id="payeeAvatar">₹</div>
+        <div class="payee-info"><strong id="payeeName">Unknown payee</strong><span id="payeeVpa">UPI ID unavailable</span></div>
+      </div>
+      <div class="detail-grid">
+        <div><span>QR TYPE</span><strong id="qrType">UPI payment</strong></div>
+        <div><span>QR AMOUNT</span><strong id="qrAmount">Not fixed</strong></div>
+      </div>
+      <div class="field">
+        <label for="amountInput">Settlement amount <small id="amountHint">Optional for static QR</small></label>
+        <div class="amount-wrap"><span>₹</span><input id="amountInput" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="vehicleInput">Truck / vehicle</label><input id="vehicleInput" maxlength="32" placeholder="e.g. GJ01AB1234"></div>
+        <div class="field"><label for="noteInput">Driver / expense note</label><input id="noteInput" maxlength="80" placeholder="Fuel, toll, repair…"></div>
+      </div>
+      <div class="warning" id="lockedWarning" hidden>Amount is embedded in this QR. Kova will preserve it and won't overwrite it.</div>
+      <div class="button-stack">
+        <button class="primary-btn wide" id="continueBtn">Continue to UPI app <span>↗</span></button>
+        <button class="secondary-btn wide" id="copyVpaBtn">Copy UPI ID</button>
+        <button class="text-btn wide" id="resetBtn">Scan another QR</button>
+      </div>
+      <p class="disclaimer">Always verify the payee name and amount inside your UPI app before entering your PIN. Kova never initiates or confirms a payment.</p>
+    </section>
+
+    <section class="ledger-card">
+      <div class="section-head">
+        <div><p class="eyebrow">03 / LOCAL RECORD</p><h2>Recent handoffs</h2></div>
+        <button class="text-btn" id="clearLedgerBtn">Clear</button>
+      </div>
+      <div id="ledgerList" class="ledger-list"><p class="empty-ledger">No handoffs recorded yet.</p></div>
+      <p class="micro">Saved only in this browser on this device. A handoff is not proof of payment.</p>
+    </section>
+    <footer><p>“You first need Money to be a part of your family”</p><span>BUILT BY <a href="https://ac-portfolio-phi.vercel.app" target="_blank" rel="noreferrer">ARYAN CHHEDA ↗</a></span></footer>
+  </main>
+
+  <dialog id="appDialog" class="app-dialog">
+    <div class="dialog-top"><div><p class="eyebrow">PAYMENT HANDOFF</p><h2>Choose your UPI app</h2></div><button class="icon-btn" id="closeDialog" aria-label="Close">×</button></div>
+    <p class="dialog-copy">Kova will pass the payment details to your selected app. Check everything again before paying.</p>
+    <div class="app-options">
+      <button data-app="generic"><span class="app-icon">↗</span><span><b>Any UPI app</b><small>Open system UPI chooser</small></span><span>›</span></button>
+      <button data-app="gpay"><span class="app-icon">G</span><span><b>Google Pay</b><small>Open if installed</small></span><span>›</span></button>
+      <button data-app="phonepe"><span class="app-icon">पे</span><span><b>PhonePe</b><small>Open if installed</small></span><span>›</span></button>
+      <button data-app="paytm"><span class="app-icon">P</span><span><b>Paytm</b><small>Open if installed</small></span><span>›</span></button>
+    </div>
+    <p class="micro">App-specific links depend on the app version and device. If an app doesn't open, choose “Any UPI app”.</p>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
+  <script src="/app.js" defer></script>
+</body>
+</html>
